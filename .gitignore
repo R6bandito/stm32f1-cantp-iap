@@ -1,0 +1,46 @@
+# Keil MDK generated files
+*.uvguix.*
+*.uvoptx
+*.scvd
+*.dbgf
+*.dep
+*.iex
+*.plg
+*.htm
+*.bak
+*.lnp
+*.lst
+*.map
+*.crf
+*.d
+*.o
+*.axf
+*.hex
+*.log
+*.lnp
+*.iex
+*.htm
+
+# Compiler intermediate files
+*.obj
+*.lst
+*.i
+*.sbr
+
+# Debug and listing folders
+/Listings/
+/Objects/
+/RTE/_*
+/DebugConfig/
+
+# User specific project options (keep project file but ignore user settings)
+*.uvopt
+*.uvproj.*
+*.uvmpw.*
+*.uvguix
+*.uvgui.*
+*.scvd
+
+# But keep .sct and .bin (scatter file and binary output)
+!*.sct
+!*.bin
