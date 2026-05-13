@@ -32,6 +32,7 @@
   extern volatile bool data_send_sample_flag;
   extern uint8_t iap_commandBuff[8];
   extern volatile bool iap_start_flag;
+  extern Cus_CANTp_Conn_t *pConn;
 /* ************************************** */
 
 /* ********* Ymodem 全局数据. ************ */
@@ -84,19 +85,32 @@ void PendSV_Handler(void)
 {
   if ( g_data_pending )
   {
-    // 存在数据挂起. 待转发.
-    g_data_pending = 0;
-
     // 发起一次CANTP通信请求. 转发该包数据.
-    // __HAL_TIM_DISABLE_IT(&htim4, TIM_IT_UPDATE);
-    // uint8_t hReturn = Cus_Cantp_Transmit(0, 0, g_bridge_data, g_bridge_len, CAN1);
-    // __HAL_TIM_ENABLE_IT(&htim4, TIM_IT_UPDATE);
-    // if ( hReturn == 0 )
-    // {
-    //   // 发送失败.不重置标志. 等待发送超时.
-    //   return;
-    // }
+    __HAL_TIM_DISABLE_IT(&htim4, TIM_IT_UPDATE);
+    S8 hReturn = Cus_Cantp_startTransmit(pConn, g_bridge_data, g_bridge_len);
+    __HAL_TIM_ENABLE_IT(&htim4, TIM_IT_UPDATE);
+    if ( hReturn == 0 )
+    {
+      // 发送请求失败.不重置标志.等待发送超时.
+      return;
+    }
 
+    // 清标志.
+    g_data_pending = 0;      // 清除待处理标志
+    g_resend_done = 1;
+    
+
+    // ---------- 用 printf 打印接收到的 YModem 数据包 ----------
+    // printf("YModem packet (%d bytes): ", g_bridge_len);
+    // for (uint32_t i = 0; i < g_bridge_len; i++)
+    // {
+    //     printf("%02X ", g_bridge_data[i]);
+    // }
+    // printf("\r\n");
+    // -----------------------------------------------------------
+
+    // g_data_pending = 0;      // 清除待处理标志
+    // g_resend_done = 1;       // 通知 Ymodem_Receive 已完成
   }
 }
 
@@ -197,6 +211,8 @@ void SVC_Handler(void)
 void SysTick_Handler(void)
 {
 	HAL_IncTick();
+  Cus_Cantp_HeartTick();
+  Cus_Cantp_MainFunction();
 }
 
 

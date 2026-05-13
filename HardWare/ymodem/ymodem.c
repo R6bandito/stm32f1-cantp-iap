@@ -282,6 +282,7 @@ int32_t Ymodem_Receive ()
                       }
                     }
                   }
+                  HAL_Delay(40);
 
                   Send_Byte(ACK);
                 }
@@ -299,12 +300,14 @@ int32_t Ymodem_Receive ()
           {
             errors ++;
           }
+          
           if (errors > MAX_ERRORS)
           {
             Send_Byte(CA);
             Send_Byte(CA);
             return 0;
           }
+
           Send_Byte(CRC16);
           break;
       }

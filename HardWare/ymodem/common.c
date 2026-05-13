@@ -193,7 +193,7 @@ uint32_t GetIntegerInput(int32_t * num)
 uint32_t SerialKeyPressed(uint8_t *key)
 {
 
-  if ( __HAL_UART_GET_FLAG(&huart2, UART_FLAG_RXNE) != RESET)
+  if ( __HAL_UART_GET_FLAG(&huart2, UART_FLAG_RXNE) )
   {
     *key = (uint8_t)(huart2.Instance->DR & 0xFF);
     return 1;
@@ -230,12 +230,12 @@ uint8_t GetKey(void)
 void SerialPutChar(uint8_t c)
 {
   uint32_t timeout = 10000;
-  while ( __HAL_UART_GET_FLAG(&huart2, UART_FLAG_TXE) == RESET && timeout )
+  while ( !__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TXE) && timeout )
   {
     timeout--;
     if ( timeout == 0 )   return;
   }
-  huart2.Instance->DR = 'c';
+  huart2.Instance->DR = c;
 }
 
 /**
