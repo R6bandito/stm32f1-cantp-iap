@@ -1482,6 +1482,11 @@
               <FileType>5</FileType>
               <FilePath>.\Usr\Inc\taskInit.h</FilePath>
             </File>
+            <File>
+              <FileName>crc32table.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\crc32table.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1511,6 +1516,11 @@
               <FileName>taskInit.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Usr\Src\taskInit.c</FilePath>
+            </File>
+            <File>
+              <FileName>crc32table.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\crc32table.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -5679,6 +5689,11 @@
               <FileType>5</FileType>
               <FilePath>.\Usr\Inc\taskInit.h</FilePath>
             </File>
+            <File>
+              <FileName>crc32table.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\crc32table.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -5777,6 +5792,11 @@
               <FileName>taskInit.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Usr\Src\taskInit.c</FilePath>
+            </File>
+            <File>
+              <FileName>crc32table.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\crc32table.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -11307,6 +11327,11 @@
               <FileType>5</FileType>
               <FilePath>.\Usr\Inc\taskInit.h</FilePath>
             </File>
+            <File>
+              <FileName>crc32table.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\crc32table.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -11405,6 +11430,11 @@
               <FileName>taskInit.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Usr\Src\taskInit.c</FilePath>
+            </File>
+            <File>
+              <FileName>crc32table.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\crc32table.c</FilePath>
             </File>
           </Files>
         </Group>

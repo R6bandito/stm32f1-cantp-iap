@@ -1,5 +1,4 @@
 #include "can_tx_rx_task.h"
-#include "Cus_CANTP.h"
 #include "sensor_data.h"
 #include "Cus_Flash.h"
 #include "crc32table.h"
