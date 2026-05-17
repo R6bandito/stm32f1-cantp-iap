@@ -1467,6 +1467,21 @@
               <FileType>5</FileType>
               <FilePath>.\Usr\Inc\stm32f1xx_it.h</FilePath>
             </File>
+            <File>
+              <FileName>can_tx_rx_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\can_tx_rx_task.h</FilePath>
+            </File>
+            <File>
+              <FileName>iap_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\iap_task.h</FilePath>
+            </File>
+            <File>
+              <FileName>taskInit.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\taskInit.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1481,6 +1496,21 @@
               <FileName>stm32f1xx_it.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Usr\Src\stm32f1xx_it.c</FilePath>
+            </File>
+            <File>
+              <FileName>can_tx_rx_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\can_tx_rx_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>iap_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\iap_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>taskInit.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\taskInit.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -5634,6 +5664,21 @@
               <FileType>5</FileType>
               <FilePath>.\Usr\Inc\stm32f1xx_it.h</FilePath>
             </File>
+            <File>
+              <FileName>can_tx_rx_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\can_tx_rx_task.h</FilePath>
+            </File>
+            <File>
+              <FileName>iap_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\iap_task.h</FilePath>
+            </File>
+            <File>
+              <FileName>taskInit.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\taskInit.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -5717,6 +5762,21 @@
               <FileName>stm32f1xx_it.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Usr\Src\stm32f1xx_it.c</FilePath>
+            </File>
+            <File>
+              <FileName>can_tx_rx_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\can_tx_rx_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>iap_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\iap_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>taskInit.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\taskInit.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -11232,6 +11292,21 @@
               <FileType>5</FileType>
               <FilePath>.\Usr\Inc\stm32f1xx_it.h</FilePath>
             </File>
+            <File>
+              <FileName>can_tx_rx_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\can_tx_rx_task.h</FilePath>
+            </File>
+            <File>
+              <FileName>iap_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\iap_task.h</FilePath>
+            </File>
+            <File>
+              <FileName>taskInit.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\taskInit.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -11315,6 +11390,21 @@
               <FileName>stm32f1xx_it.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Usr\Src\stm32f1xx_it.c</FilePath>
+            </File>
+            <File>
+              <FileName>can_tx_rx_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\can_tx_rx_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>iap_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\iap_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>taskInit.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\taskInit.c</FilePath>
             </File>
           </Files>
         </Group>

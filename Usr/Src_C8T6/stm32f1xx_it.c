@@ -36,10 +36,6 @@
 /* ************************************** */
 
 /* ********* Ymodem 全局数据. ************ */
-  extern uint8_t *g_bridge_data;
-  extern uint32_t g_bridge_len;
-  extern volatile uint8_t g_resend_done;
-  extern volatile uint8_t g_data_pending;
   extern UART_HandleTypeDef huart2;
 /* ************************************** */
 
@@ -77,40 +73,6 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
       data_send_sample_flag = true;
       it_count_sendData = 0;
     }
-  }
-}
-
-
-void PendSV_Handler(void)
-{
-  if ( g_data_pending )
-  {
-    // 发起一次CANTP通信请求. 转发该包数据.
-    __HAL_TIM_DISABLE_IT(&htim4, TIM_IT_UPDATE);
-    S8 hReturn = Cus_Cantp_startTransmit(pConn, g_bridge_data, g_bridge_len);
-    __HAL_TIM_ENABLE_IT(&htim4, TIM_IT_UPDATE);
-    if ( hReturn == 0 )
-    {
-      // 发送请求失败.不重置标志.等待发送超时.
-      return;
-    }
-
-    // 清标志.
-    g_data_pending = 0;      // 清除待处理标志
-    g_resend_done = 1;
-    
-
-    // ---------- 用 printf 打印接收到的 YModem 数据包 ----------
-    // printf("YModem packet (%d bytes): ", g_bridge_len);
-    // for (uint32_t i = 0; i < g_bridge_len; i++)
-    // {
-    //     printf("%02X ", g_bridge_data[i]);
-    // }
-    // printf("\r\n");
-    // -----------------------------------------------------------
-
-    // g_data_pending = 0;      // 清除待处理标志
-    // g_resend_done = 1;       // 通知 Ymodem_Receive 已完成
   }
 }
 

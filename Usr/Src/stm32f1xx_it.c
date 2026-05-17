@@ -118,6 +118,7 @@ void UsageFault_Handler(void)
 		if ( htim->Instance == TIM6 )
 		{
 			HAL_IncTick();
+			Cus_Cantp_HeartTick();
 		}
 	}
 

@@ -61,6 +61,10 @@
 #define YMODEM_UART_TX_PIN      (GPIO_PIN_2)
 #define YMODEM_UART_RX_PIN      (GPIO_PIN_3)
 
+#define FW_PACK_HEADER_INFO     (0xF1)          // 固件信息包头
+#define FW_PACK_HEADER_DATA     (0xF2)          // 固件数据包头
+#define FW_PACK_HEADER_END      (0xFE)          // 固件发送结束包头
+
 #define CON_DEVICE_RECV_BUF     (224 * 1024)    // 对端通信设备最大接收缓冲区.
 
 /* Exported functions ------------------------------------------------------- */

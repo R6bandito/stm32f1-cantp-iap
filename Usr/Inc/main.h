@@ -2,22 +2,25 @@
 #define __MAIN_H__
 
 
+#define __TEST__ 									(0)
+
+#define DEVICE_ADDR								(0x12)				// 本机地址.
+#define REMOTE_ADDR								(0x18)				// 对端地址.
+
+#define RING_BUFFER_SIZE_FRAME		(32)
+
 #include "stm32f1xx_hal.h"
 #include "sys.h"
 #include "debug_uart.h"
-#include "ds.h"
+#include "CAN_Cus.h"
+#include "taskInit.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 
-#if (STM32F103ZET6)
-	#include "FreeRTOS.h"
-	#include "task.h"
-#endif // STM32F103ZET6
-
-#if (STM32F103ZET6)
-	#define LV_DISABLE_API_MAPPING
-	#define LV_CONF_INCLUDE_SIMPLE
-	#include "lvgl.h"
-#endif // STM32F103ZET6
+#define LV_DISABLE_API_MAPPING
+#define LV_CONF_INCLUDE_SIMPLE
+#include "lvgl.h"
 
 
 

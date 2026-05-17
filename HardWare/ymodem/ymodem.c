@@ -28,6 +28,8 @@
 #include "common.h"
 #include "ymodem.h"
 #include "string.h"
+#include "crc32table.h"
+#include <stdbool.h>
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -39,12 +41,34 @@ UART_HandleTypeDef huart2;
 
 uint8_t *g_bridge_data;
 uint32_t g_bridge_len;
-volatile uint8_t g_resend_done;    // 转发成功标志.
-volatile uint8_t g_data_pending;   // 有数据待转发标志.
+uint8_t fw_data_buf[1025];
+static uint32_t s_CRC_C8T6;
+uint32_t g_Hardware_size;
 
+extern volatile bool is_ACKRecev;
+extern volatile bool is_NAKRecv;
+
+extern uint8_t C8T6_SendAndWaitACK( const uint8_t *data, uint32_t len, uint32_t timeout );
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
+
+static void CRC32_Update( uint32_t *pCRC, const uint8_t *pData, uint32_t data_len )
+{
+  const uint32_t *table = crc32_table;
+  for (uint32_t i = 0; i < data_len; i++)
+  {
+      *pCRC = (*pCRC >> 8) ^ table[(*pCRC ^ pData[i]) & 0xFF];
+  }
+}
+
+
+static void CRC32_Init( uint32_t *pCRC )
+{
+  if ( !pCRC )    return;
+
+  *pCRC = 0xFFFFFFFF;
+}
 
 void Ymodem_UARTInit( void )
 { 
@@ -192,137 +216,199 @@ static int32_t Receive_Packet (uint8_t *data, int32_t *length, uint32_t timeout)
   * @param  buf: Address of the first byte.
   * @retval The size of the file.
   */
-int32_t Ymodem_Receive ()
-{
-  uint8_t packet_data[PACKET_1K_SIZE + PACKET_OVERHEAD]; 
-  uint8_t file_size[FILE_SIZE_LENGTH]; 
-  uint8_t *file_ptr; 
-  int32_t i, packet_length, session_done, file_done, packets_received, errors, session_begin, size = 0;
+ int32_t Ymodem_Receive ()
+ {
+   uint8_t packet_data[PACKET_1K_SIZE + PACKET_OVERHEAD]; 
+   uint8_t file_size[FILE_SIZE_LENGTH]; 
+   uint8_t *file_ptr; 
+   int32_t i, packet_length, session_done, file_done, packets_received, errors, session_begin, size = 0;
+   static uint8_t s_req_sendCount = 0;
 
-  for (session_done = 0, errors = 0, session_begin = 0; ;)
-  {
-    for (packets_received = 0, file_done = 0; ;)
-    {
-      switch (Receive_Packet(packet_data, &packet_length, NAK_TIMEOUT))
-      {
-        case 0:
-          errors = 0;
-          switch (packet_length)
-          {
-            /* Abort by sender */
-            case - 1:
-              Send_Byte(ACK);
-              return 0;
-            /* End of transmission */
-            case 0:
-              Send_Byte(ACK);
-              file_done = 1;
-              break;
-            /* Normal packet */
-            default:
-              if ((packet_data[PACKET_SEQNO_INDEX] & 0xff) != (packets_received & 0xff))
-              {
+   s_req_sendCount = 0;
+ 
+   CRC32_Init(&s_CRC_C8T6);
+ 
+   for (session_done = 0, errors = 0, session_begin = 0; ;)
+   {
+     for (packets_received = 0, file_done = 0; ;)
+     {
+       switch (Receive_Packet(packet_data, &packet_length, NAK_TIMEOUT))
+       {
+         case 0:
+           errors = 0;
+           switch (packet_length)
+           {
+             /* Abort by sender */
+             case - 1:
+               Send_Byte(ACK);
+               return 0;
+             /* End of transmission */
+             case 0:
+               /* 构建 END 包.  */
+               uint8_t end[6] = { 0 };
+               end[0] = FW_PACK_HEADER_END;
+               uint32_t crc_c8t6_finalize = s_CRC_C8T6 ^ 0xFFFFFFFF;
+               *(uint32_t *)(end + 1) = crc_c8t6_finalize;
+
+               /* 发送 END 包 */
+               uint8_t eot_ack = C8T6_SendAndWaitACK(end, sizeof(end), 150);
+               if ( eot_ack )
+               {
+                 /* ACK 接收成功. */
+                 Send_Byte(ACK);
+                 file_done = 1;
+               }
+               else 
+               {
+                /* 请求上层重发. */
                 Send_Byte(NAK);
-              }
-              else
-              {
-                if (packets_received == 0)
-                {
-                  /* Filename packet */
-                  if (packet_data[PACKET_HEADER] != 0)
-                  {
-                    /* Filename packet has valid data */
-                    for (i = 0, file_ptr = packet_data + PACKET_HEADER; (*file_ptr != 0) && (i < FILE_NAME_LENGTH);)
-                    {
-                      FileName[i++] = *file_ptr++;
-                    }
-                    FileName[i++] = '\0';
-                    for (i = 0, file_ptr ++; (*file_ptr != ' ') && (i < FILE_SIZE_LENGTH);)
-                    {
-                      file_size[i++] = *file_ptr++;
-                    }
-                    file_size[i++] = '\0';
-                    Str2Int(file_size, &size);
-                    
-                    Send_Byte(ACK);
-                    Send_Byte(CRC16);
-                  }
-                  /* Filename packet is empty, end session */
-                  else
-                  {
-                    Send_Byte(ACK);
-                    file_done = 1;
-                    session_done = 1;
-                    break;
-                  }
-                }
-                /* Data packet */
-                else
-                {
-                  g_bridge_data = packet_data + PACKET_HEADER;
-                  g_bridge_len = packet_length;
+               }
 
-                  {
-                    // 桥接逻辑. 触发 PendSV. 直接将接收到的该包通过 CANTP 进行发送.
-                    g_resend_done = 0;  __DSB();
-                    g_data_pending = 1; __DSB();
-                    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;  // 软件触发一次 PendSV.
+               /* 保证下一次传输不受上次计数残留影响 */
+               is_ACKRecev = false;
+               is_NAKRecv = false;
+               break;
+             /* Normal packet */
+             default:
+               if ((packet_data[PACKET_SEQNO_INDEX] & 0xff) != (packets_received & 0xff))
+               {
+                 Send_Byte(NAK);
+               }
+               else
+               {
+                 if (packets_received == 0)
+                 {
+                   /* Filename packet */
+                   if (packet_data[PACKET_HEADER] != 0)
+                   {
+                     /* Filename packet has valid data */
+                     for (i = 0, file_ptr = packet_data + PACKET_HEADER; (*file_ptr != 0) && (i < FILE_NAME_LENGTH);)
+                     {
+                       FileName[i++] = *file_ptr++;
+                     }
+                     FileName[i++] = '\0';
+                     for (i = 0, file_ptr ++; (*file_ptr != ' ') && (i < FILE_SIZE_LENGTH);)
+                     {
+                       file_size[i++] = *file_ptr++;
+                     }
+                     file_size[i++] = '\0';
+                     Str2Int(file_size, &size);
+ 
+                     {
+                       /* 保存固件大小信息 为后续留用 */
+                       g_Hardware_size = (uint32_t)size;
+ 
+                       /* 构建固件info信息 */
+                       uint8_t info[6] = { 0 };
+                       info[0] = FW_PACK_HEADER_INFO;
+                       *(uint32_t *)(info + 1) = g_Hardware_size;
+                       info[5] = (packet_length == PACKET_1K_SIZE) ? 0 : 1;
+ 
+                       /* 发送info包，等待ACK */
+                       uint8_t hReturn = C8T6_SendAndWaitACK(info, sizeof(info), 100);
+                       if ( !hReturn )
+                       {
+                         /* 发送失败.(请求提交失败/等待ACK失败) 结束本次通信 */
+                         printf("C8T6_SendAndWaitACK Timeout. in Ymodem_Receive.\r\n");
+                         Send_Byte(CA);
+                         Send_Byte(CA);
 
-                    // 设置超时. 等待转发成功.
-                    uint32_t timeout = 20000;
-                    while( g_resend_done != 1 && timeout )
-                    {
-                      timeout--;
-                      if ( timeout == 0 )
+                         return 0;
+                       }
+                     }
+
+                     /* 消费掉 ACK 标志.(C8T6_SendAndWaitACK内部只检测ACK，而不消费ACK. 关于ACK复位由上层确保) */
+                     is_ACKRecev = false;
+                     
+                     Send_Byte(ACK);
+                     Send_Byte(CRC16);
+                   }
+                   /* Filename packet is empty, end session */
+                   else
+                   {
+                     Send_Byte(ACK);
+                     file_done = 1;
+                     session_done = 1;
+                     break;
+                   }
+                 }
+                 /* Data packet */
+                 else
+                 {
+                   g_bridge_data = packet_data + PACKET_HEADER;
+                   g_bridge_len = packet_length;
+ 
+                   /* 每收到一包数据，校验CRC32 */
+                   CRC32_Update(&s_CRC_C8T6, g_bridge_data, g_bridge_len);
+ 
+                   {
+                     /* 发送固件数据包(带包头) */
+                     fw_data_buf[0] = FW_PACK_HEADER_DATA;
+                     memcpy(&fw_data_buf[1], g_bridge_data, g_bridge_len);
+ 
+                     /* 发送包数据(多帧发送耗时较长，适当延长Timeout) */
+                     uint8_t hReturn = C8T6_SendAndWaitACK(fw_data_buf, g_bridge_len + 1, 250);
+                     if ( !hReturn )
+                     {
+                      s_req_sendCount++;
+                      if ( s_req_sendCount > 3 )
                       {
-                        // 发送失败. 结束通信.
+                        printf("C8T6_SendAndWaitACK Timeout in 3 times. Connection close.\r\n");
                         Send_Byte(CA);
                         Send_Byte(CA);
-                        return -2;
+
+                        return 0;
                       }
-                    }
-                  }
-                  HAL_Delay(40);
 
-                  Send_Byte(ACK);
-                }
-                packets_received ++;
-                session_begin = 1;
-              }
-          }
-          break;
-        case 1:
-          Send_Byte(CA);
-          Send_Byte(CA);
-          return -3;
-        default:
-          if (session_begin > 0)
-          {
-            errors ++;
-          }
-          
-          if (errors > MAX_ERRORS)
-          {
-            Send_Byte(CA);
-            Send_Byte(CA);
-            return 0;
-          }
-
-          Send_Byte(CRC16);
-          break;
-      }
-      if (file_done != 0)
-      {
-        break;
-      }
-    }
-    if (session_done != 0)
-    {
-      break;
-    }
-  }
-  return (int32_t)size;
-}
+                      /* 出错. 请求发送方重发该包. */
+                      printf("C8T6_SendAndWaitACK Timeout in data packet.\r\n");
+                      is_ACKRecev = false;
+                      Send_Byte(NAK);
+                      continue;
+                     }
+                     s_req_sendCount = 0;
+                     is_ACKRecev = false;
+                   }
+ 
+                   Send_Byte(ACK);
+                 }
+                 packets_received ++;
+                 session_begin = 1;
+               }
+           }
+           break;
+         case 1:
+           Send_Byte(CA);
+           Send_Byte(CA);
+           return -3;
+         default:
+           if (session_begin > 0)
+           {
+             errors ++;
+           }
+           
+           if (errors > MAX_ERRORS)
+           {
+             Send_Byte(CA);
+             Send_Byte(CA);
+             return 0;
+           }
+ 
+           Send_Byte(CRC16);
+           break;
+       }
+       if (file_done != 0)
+       {
+         break;
+       }
+     }
+     if (session_done != 0)
+     {
+       break;
+     }
+   }
+   return (int32_t)size;
+ }
 
 /**
   * @brief  check response using the ymodem protocol

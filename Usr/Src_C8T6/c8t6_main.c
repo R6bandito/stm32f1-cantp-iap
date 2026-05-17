@@ -5,17 +5,26 @@
 volatile bool dht11_sample_flag = false;
 volatile bool data_send_sample_flag = false;
 volatile bool iap_start_flag = false;
+volatile bool is_ACKRecev = false;
+
+/* NAK 在当前 Ymodem 逻辑中并未使用. 此处仅作为接口预留，方便以后拓展 */
+volatile bool is_NAKRecv = false;
+
 uint8_t iap_commandBuff[6];
 Cus_CANTp_Conn_t *pConn;
+Cus_CANTp_Conn_t *pConn_Rx;
 
 uint8_t initBuff[128];
 uint8_t filterBuff[128];
+uint8_t cantp_rxBuf[16];
 
 extern UART_HandleTypeDef huart2;
 /* *************************************************** */
 
 /* *************************************************** */
   static void MX_CAN_Init( void );
+  static void c8t6_AckCallback( Cus_CANTp_Conn_t *pConn, const U8 *data, U32 len );
+  uint8_t C8T6_SendAndWaitACK( const uint8_t *data, uint32_t len, uint32_t timeout );
 /* *************************************************** */
 
 /* *************************************************** */
@@ -43,10 +52,30 @@ int main( void )
 
   /* 初始化 CANTP. 创建发送连接 */
   Cus_Cantp_SystemInit();
-  pConn = Cus_Cantp_CreateTxConnection(0x12, 0x18, CANTP_ADDR_MODE_COMMON, (void *)CAN1, Cus_CanTP_canSendFunc_Asynchronous, NULL);
+  pConn = Cus_Cantp_CreateTxConnection( 0x12, 
+                                        0x18, 
+                                        CANTP_ADDR_MODE_COMMON, 
+                                        (void *)CAN1, 
+                                        Cus_CanTP_canSendFunc_Asynchronous, 
+                                        NULL );
   if ( !pConn )
   {
     printf("Cantp create TxConnection Failed.\r\n");
+    for( ; ; );
+  }
+
+  pConn_Rx = Cus_Cantp_CreateRxConnection( 0x18, 
+                                           CANTP_ADDR_MODE_COMMON, 
+                                           0, 10, 
+                                           (void *)CAN1, 
+                                           cantp_rxBuf, 
+                                           sizeof(cantp_rxBuf), 
+                                           Cus_CanTP_canSendFunc_Asynchronous, 
+                                           c8t6_AckCallback, 
+                                           NULL );
+  if ( !pConn_Rx )
+  {
+    printf("Cantp create RxConnection Failed.\r\n");
     for( ; ; );
   }
 
@@ -215,7 +244,7 @@ static void MX_CAN_Init( void )
   pFilter->Scale = Cus_CAN_SCALE_32BIT;
   pFilter->is_Activation = Cus_FILTER_Enable;
 
-  Cus_CAN_Filter_SetStdList32(pFilter, CAN_FILTER_RTR_NONE, 0x18, 0x17);      // 本机地址  0x18.
+  Cus_CAN_Filter_SetStdList32(pFilter, CAN_FILTER_RTR_NONE, 0, 0);      // 全通滤波.
 
   if ( pFilter->Cus_CAN_FilterInit(pFilter, CAN1) != HAL_OK )
   {
@@ -240,3 +269,42 @@ static void MX_CAN_Init( void )
   pDev->EnableInterrupt(pDev, CAN_IT_RX_FIFO0_MSG_PENDING);
 }
 
+
+
+uint8_t C8T6_SendAndWaitACK( const uint8_t *data, uint32_t len, uint32_t timeout )
+{
+  if ( !data || len == 0 || timeout < ACK_WAIT_TIMEOUT_THRESHOLD )   return 0;
+
+  S8 ret = Cus_Cantp_startTransmit(pConn, data, len);
+  if ( ret )
+  {
+    /* 发送请求提交成功，开始计时等待 ACK */
+    uint32_t sTickRecord = HAL_GetTick();
+    while( HAL_GetTick() - sTickRecord < timeout && !is_ACKRecev )
+    {
+      /* 空循环 */
+    }
+
+    /* 收到ACK应答 */
+    if ( is_ACKRecev )   return 1;
+  }
+
+  /* 发送请求提交失败/未收到应答. */
+  return 0;
+}
+
+
+static void c8t6_AckCallback( Cus_CANTp_Conn_t *pConn, const U8 *data, U32 len )
+{
+  if ( !pConn || !data || len == 0 )  return;
+
+  if ( len >= 1 && data[0] == 0xFE )
+  {
+    /* 收到ZET6侧发来的ACK */
+    is_ACKRecev = true;
+  }
+  else if ( len >= 1 && data[0] == 0xFF )
+  {
+    is_NAKRecv = true;
+  }
+}

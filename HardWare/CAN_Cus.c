@@ -1399,7 +1399,7 @@ __attribute__((used)) __weak void Cus_CAN_NVIC_Config( Cus_CAN_Device_t *pDev )
     bool is_RecvRx0OverRun_IT = pDev->CheckInterrupt((const Cus_CAN_Device_t *)pDev, CAN_IT_RX_FIFO0_OVERRUN);
     if ( is_RecvRx0_IT || is_RecvRx0Full_IT || is_RecvRx0OverRun_IT )
     {
-      HAL_NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 5, 0);
+      HAL_NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 6, 0);
       HAL_NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
     }
 
@@ -1408,14 +1408,14 @@ __attribute__((used)) __weak void Cus_CAN_NVIC_Config( Cus_CAN_Device_t *pDev )
     bool is_RecvRx1OverRun_IT = pDev->CheckInterrupt((const Cus_CAN_Device_t *)pDev, CAN_IT_RX_FIFO1_OVERRUN);
     if ( is_RecvRx1_IT || is_RecvRx1Full_IT || is_RecvRx1OverRun_IT )
     {
-      HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 5, 0);
+      HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 6, 0);
       HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
     }
 
     bool is_TxMailBoxCplt_IT = pDev->CheckInterrupt((const Cus_CAN_Device_t *)pDev, CAN_IT_TX_MAILBOX_EMPTY);
     if ( is_TxMailBoxCplt_IT )
     {
-      HAL_NVIC_SetPriority(USB_HP_CAN1_TX_IRQn, 5, 0);
+      HAL_NVIC_SetPriority(USB_HP_CAN1_TX_IRQn, 6, 0);
       HAL_NVIC_EnableIRQ(USB_HP_CAN1_TX_IRQn);
     }
 
@@ -1426,7 +1426,7 @@ __attribute__((used)) __weak void Cus_CAN_NVIC_Config( Cus_CAN_Device_t *pDev )
     bool is_Error_Busoff_IT = pDev->CheckInterrupt((const Cus_CAN_Device_t *)pDev, CAN_IT_BUSOFF);
     if ( is_Error_WakeUP_IT || is_Error_IT || is_Error_Sleep_IT || is_Error_Passive_IT || is_Error_Busoff_IT )
     {
-      HAL_NVIC_SetPriority(CAN1_SCE_IRQn, 5, 0);
+      HAL_NVIC_SetPriority(CAN1_SCE_IRQn, 6, 0);
       HAL_NVIC_EnableIRQ(CAN1_SCE_IRQn);
     }
 

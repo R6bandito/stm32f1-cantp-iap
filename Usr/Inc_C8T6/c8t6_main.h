@@ -10,5 +10,10 @@
 #include "CAN_Cus.h"
 
 
+/* ********************************** */
+  #define ACK_WAIT_TIMEOUT_THRESHOLD      (20)
+
+/* ********************************** */
+
 
 #endif // __C8T6_MAIN_H__
